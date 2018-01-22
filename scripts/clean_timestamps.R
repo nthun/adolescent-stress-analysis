@@ -40,11 +40,8 @@ aap_markers <-
 
 all_markers <- 
     bind_rows(aap_markers, puzzle_markers) %>% 
-    mutate(marker = 1L) %>% 
-    arrange(id, session, sample_time)
+    group_by(id, session) %>% 
+    mutate(marker = 1:n())
+
     
 write_excel_csv(all_markers, "data/all_markers_clean.csv", na = "")
-
-
-all_markers %>% 
-    filter(!str_detect(marker_name, ".* end$"))
