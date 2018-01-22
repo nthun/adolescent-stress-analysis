@@ -11,11 +11,11 @@ dir.create(headerless_dir)
 partial_files <-
     tibble(
         # Get all files with a number at the end of filename
-        file = list.files("data/raw/", "_\\d.txt")) %>%
+        file = list.files("data/0_raw/", "_\\d.txt")) %>%
     separate(file, c("id", "session", "measurement", "piece"), sep = "_", remove = FALSE) %>% 
     mutate( piece = str_replace(piece, ".txt", ""),
             data = map(file,
-                ~ read_csv(paste0("data/raw/", .x), skip = 8, col_names = FALSE, col_types = "dd") %>% 
+                ~ read_csv(paste0("data/0_raw/", .x), skip = 8, col_names = FALSE, col_types = "dd") %>% 
                     select(time = 1, value = 2)),
             # Extract the last timesamp from each file
             last_time = map_dbl(data, ~last(.x$time)),
@@ -38,9 +38,9 @@ walk2(partial_files$data,
 # Remove header for all the other files (to make them the same) -----------
 # Get all files that does not contain numbers at the end
 good_files <- 
-    tibble(filename = setdiff(list.files("data/raw/"), list.files("data/raw/", "\\d.txt$"))) %>% 
+    tibble(filename = setdiff(list.files("data/0_raw/"), list.files("data/0_raw/", "\\d.txt$"))) %>% 
     mutate(data = map(filename,
-                      ~ read_csv(paste0("data/raw/", .x), skip = 8, col_names = FALSE, col_types = "dd") %>% 
+                      ~ read_csv(paste0("data/0_raw/", .x), skip = 8, col_names = FALSE, col_types = "dd") %>% 
                           select(time = 1, value = 2))
            )
 # Write the files
