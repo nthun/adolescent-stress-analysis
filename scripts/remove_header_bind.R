@@ -2,10 +2,9 @@
 # Also, strip all headers from the beginning of files
 
 library(tidyverse)
-library(glue)
 
 headerless_dir <- "data/1_headerless/"
-dir.create(headerless_dir)
+# dir.create(headerless_dir)
 
 # Bind separated files together, and remove the header --------------------
 partial_files <-
@@ -26,24 +25,28 @@ partial_files <-
     unnest(data) %>% 
     group_by(id, measurement) %>% 
     nest(time, value) %>% 
-    mutate(filename = glue("{id}_AAP_{measurement}.txt"))
-
-
+    mutate(filename = str_glue("{id}_AAP_{measurement}.txt"))
 
 # Write the files
 walk2(partial_files$data,
       partial_files$filename,
-      ~ write_excel_csv(.x, path = glue("{headerless_dir}{.y}"), na = "", col_names = FALSE))
+      ~ write_excel_csv(.x, path = str_glue("{headerless_dir}{.y}"), na = "", col_names = FALSE))
 
 # Remove header for all the other files (to make them the same) -----------
 # Get all files that does not contain numbers at the end
 good_files <- 
     tibble(filename = setdiff(list.files("data/0_raw/"), list.files("data/0_raw/", "\\d.txt$"))) %>% 
     mutate(data = map(filename,
-                      ~ read_csv(paste0("data/0_raw/", .x), skip = 8, col_names = FALSE, col_types = "dd") %>% 
-                          select(time = 1, value = 2))
+                      ~ read_csv(str_glue("data/0_raw/{.x}"), 
+                                 skip = 8, 
+                                 col_names = FALSE
+                                 # col_types = "dd"
+                                 ) #%>% 
+                          # select(time = 1, value = 2)
+                      )
            )
+
 # Write the files
 walk2(good_files$data,
       good_files$filename,
-      ~ write_excel_csv(.x, path = glue("{headerless_dir}{.y}"), na = "", col_names = FALSE))
+      ~ write_excel_csv(.x, path = str_glue("{headerless_dir}{.y}"), na = "", col_names = FALSE))
