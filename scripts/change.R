@@ -4,13 +4,12 @@
 #        .fun : function to execute, defaults to mean
 # OUTPUT: An aggregated number that represents the aggregated change
 # EXAMPLE: 
-# df1 <- x = c(10, 11, 9, 8, 16, 7, 8, 9, 10, 5)
-# summarise(df1, pc = change(x),
-#                nc = change(x, "negative"))
+# df1 <- tibble(x = c(10, 11, 9, 8, 16, 7, 8, 9, 10, 5))
+# summarise(df1, pc = change(x), nc = change(x, "negative"))
     
 change <- function(x, direction = c("positive","negative"), .fun = mean){
-    diff <- x - dplyr::lag(x)
-    if (direction[1] == "positive") diff[diff<=0] = 0
-    if (direction[1] == "negative") diff[diff>=0] = 0
-    .fun(diff, na.rm = TRUE)
+    difference <- diff(x)
+    if (direction[1] == "positive") difference[difference < 0] = 0
+    if (direction[1] == "negative") difference[difference > 0] = 0
+    .fun(difference, na.rm = TRUE)
 }
