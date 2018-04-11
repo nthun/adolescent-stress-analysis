@@ -3,6 +3,7 @@ library(tidyverse)
 library(googlesheets)
 library(hms)
 
+bad_times <- c("001S", "017M", "021M", "047M")
 
 correct_times <- 
     gs_title("puzzle_biograph-hang hossz") %>% 
@@ -35,10 +36,17 @@ aap_markers <-
     select(id, session, time, marker_name) %>% 
     arrange(id, time)
 
+# This list does not contain the files that were in two parts, as the time is not corrected
 all_markers <- 
     bind_rows(aap_markers, puzzle_markers) %>% 
+    mutate(time = round(time) %>% as.integer(),
+           session = str_to_upper(session)) %>% 
     group_by(id, session) %>% 
-    mutate(marker = 1:n())
+    mutate(marker = 1:n()) %>% 
+    ungroup() %>% 
+    filter(!is.na(marker_name)) %>% 
+    filter(!(id %in% bad_times))
 
-    
+
+
 write_excel_csv(all_markers, "data/all_markers_clean.csv", na = "")
