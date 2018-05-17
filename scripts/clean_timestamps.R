@@ -3,6 +3,7 @@ library(tidyverse)
 library(googlesheets)
 library(hms)
 
+# There are files where the recordings are in two pieces
 bad_times <- c("001S", "017M", "021M", "047M")
 
 correct_times <- 
@@ -10,21 +11,20 @@ correct_times <-
     gs_read(1, col_types = "ccc") %>% 
     mutate(biograph_length = paste0("0:",biograph_length) %>% parse_hms(),
            sound_file_length = paste0("0:",sound_file_length) %>% parse_hms(),
-           time_correction = as.numeric(biograph_length)/as.numeric(sound_file_length))
+           time_correction = as.numeric(biograph_length) / as.numeric(sound_file_length)) %>% 
+    drop_na()
 
 puzzle_markers <-
-    gs_title("Charlotte_puzzle_kieg_KL  2.xls") %>% 
+    gs_title("Charlotte_puzzle_markers") %>% 
     gs_read("osszes", col_types = "ccccc") %>% 
+    # Drop emoty rows
     drop_na(id) %>%
     rename(marker_name = marker) %>% 
+    # Join time correction data
     left_join(correct_times %>% select(id, time_correction), by = "id") %>%
-    # filter(!is.na(time_correction)) %>% # This is here for test purposes only
-    mutate(
-        time = if_else(!is.na(time_correction), 
-                        (parse_hms(time) %>% as.numeric() * time_correction %>% round()), 
-                       parse_hms(time) %>% as.numeric()
-                       )
-        ) %>% 
+    # If no time correction needed, make time correction 1
+    mutate(time_correction = if_else(is.na(time_correction), 1, time_correction),
+           time = (parse_hms(time) %>% as.numeric() * time_correction) %>% round()) %>% 
     select(id, session, time, marker_name)
     
 aap_markers <-
@@ -46,7 +46,5 @@ all_markers <-
     ungroup() %>% 
     filter(!is.na(marker_name)) %>% 
     filter(!(id %in% bad_times))
-
-
 
 write_excel_csv(all_markers, "data/all_markers_clean.csv", na = "")
