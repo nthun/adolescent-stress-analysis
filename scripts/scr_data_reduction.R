@@ -8,7 +8,6 @@
 library(tidyverse)
 library(fs)
 library(hms)
-library(fuzzyjoin)
 
 source("scripts/downsample.R")
 source("scripts/change.R")

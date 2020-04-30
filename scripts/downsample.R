@@ -11,11 +11,12 @@ downsample <- function(df, variable, from, to){
     # First we create epochs using the original and new sampling rate
     temp <-
         df %>% 
-        mutate(time = seq(0L, nrow(.) - 1, 1L) %/% (from/to)/to)
+        dplyr::mutate(time = seq(0L, nrow(.) - 1, 1L) %/% (from/to)/to)
     # If the sampling rate is the same, don't do any calculation (faster)
-    if (from/to == 1) return(select(temp, time, value = !!variable))    
+    if (from/to == 1) return(dplyr::select(temp, time, value = !!variable))    
     # If the sampling rate is different, calculate the mean of values for each epoch
     temp %>% 
-        group_by(time) %>%
-        summarise(value = mean(!!rlang::sym(variable), na.rm = TRUE))
+        dplyr::group_by(time) %>%
+        dplyr::summarise(value = mean(!!rlang::sym(variable), na.rm = TRUE)) %>% 
+        dplyr::select(value)
 }
