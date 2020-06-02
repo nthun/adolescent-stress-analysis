@@ -1,0 +1,14 @@
+Processing of the pulse data (photopletysmograph)
+
+Data processing was done in R and using Artiifact (v 2.13) toolbox. 
+
+1. Data was recorded at 2048 Hz.
+2. Data was detrended using a moving average of 2048 sample (1 sec) window. (R)
+3. Data was downsampled to 128 Hz. (R)
+4. PPG peaks were detected automatically, using a global treshold and verified by manual inspection. (Artiifact)
+5. Inter beat intervals (IBIs) were calculated based on the identified peaks. 
+6. Files were cut using the markers for each event. (R)
+7. Berntson algorithm was used to remove artifacts from the IBIs. Cubic spline interpolation was ued to correct the artifacts.
+8. Segments that had less than 30 samples were removed.
+9. Time and frequency domain HRV metrics were calculated on each segment. 
+10. Outliers (RMSSD > +-3 SD) were removed
