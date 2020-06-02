@@ -6,9 +6,9 @@ Data processing was done in R and using Artiifact (v 2.13) toolbox.
 2. Data was detrended using a moving average of 2048 sample (1 sec) window. (R)
 3. Data was downsampled to 128 Hz. (R)
 4. PPG peaks were detected automatically, using a global treshold and verified by manual inspection. (Artiifact)
-5. Inter beat intervals (IBIs) were calculated based on the identified peaks. 
+5. Inter beat intervals (IBIs) were calculated based on the identified peaks. (Artiifact)
 6. Files were cut using the markers for each event. (R)
-7. Berntson algorithm was used to remove artifacts from the IBIs. Cubic spline interpolation was ued to correct the artifacts.
-8. Segments that had less than 30 samples were removed.
-9. Time and frequency domain HRV metrics were calculated on each segment. 
-10. Outliers (RMSSD > +-3 SD) were removed
+7. Berntson algorithm was used to remove artifacts from the IBIs. Cubic spline interpolation was ued to correct the artifacts. (Artiifact 3.0 Beta)
+8. Segments that had less than 30 samples were removed. (R)
+9. Time and frequency domain HRV metrics were calculated on each segment (4 Hz interpolation rate, 30 sec window, 50% overlap). (Artiifact)
+10. Outliers (RMSSD > +-3 SD) were removed. (R)
