@@ -3,7 +3,11 @@
 library(tidyverse)
 
 start_rate <- 256
-end_rate <- 256
+end_rate <- 128
+
+all_ecg <- 
+    read_csv("all_data/clean/all_ecg.csv", col_types = "ccdd") %>% 
+    mutate(session = str_replace(session, "._(\\w+)$", "\\1"))
 
 all_ecg <- 
     read_csv("all_data/clean/all_ecg.csv", col_types = "ccdd") %>% 
