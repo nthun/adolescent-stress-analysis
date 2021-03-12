@@ -1,0 +1,126 @@
+---
+title: "Adolescent stress data analysis"
+author: "Tamas Nagy"
+date: "3/12/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(janitor)
+library(lmerTest)
+library(performance)
+library(easystats)
+library(here)
+theme_set(theme_light())
+```
+
+```{r}
+trauma_spss <- read_spss(here("data/final_data_table.sav"))
+
+# trauma_spss %>% glimpse()
+
+# Create datasets to analyze and vizualize
+trauma <- 
+    trauma_spss %>% 
+    mutate(id = row_number(),
+           sex = if_else(sex_0_1 == 0, "female", "male")) %>% 
+    select(id, 
+           sex, 
+           age = eletkor, 
+           trauma_sum = TotTrauma_all_GY,
+           starts_with(c("rmssd_", "meanhr_")))
+    
+trauma_long <-
+    trauma %>% 
+    pivot_longer(cols = rmssd_AAP_1:meanhr_PUZZLE_5, 
+                 values_drop_na = TRUE) %>% 
+    separate(name, c("measure", "task", "trial"), sep = "_", convert = TRUE) %>% 
+    arrange(id, measure, task, trial) %>% 
+    mutate(trial = factor(trial)) 
+
+trauma_tidy <- 
+    trauma_long %>% 
+    pivot_wider(names_from = "measure", values_from = "value")
+```
+
+
+```{r}
+# - factor1, factor2, factor3 a három trauma faktor, az első és másodikból szerepel transzformált változat is (tr_fac1 és tr_fac2). az első alapból normáleloszlású volt, a transzformációval együtt mindhárom
+# - TotTrauma_all_GY néven van az össztrauma pontszám
+# 
+# Kimásoltam a Figyelmihálózat-teszt leírását. A 6 változó dőlt betűvel van írva.
+# 
+# A figyelmi funkció működését hat változó mutatja (7. Táblázat).
+
+
+# - A minimum reakcióidő jelezheti az impulzivitás mértékét a résztvevő válaszadásában, minél kisebb a minimum, annál rövidebb idő alatt reagál az inger bemutatását követően.
+# - Az átlagos reakcióidő azt mutatja, hogy a vizsgálati személy összességében milyen sebességgel reagál az ingerekre, minél magasabb az érték, annál lassabb a reakció. A feladatban felmérésre került a három figyelmi hálózat.
+# - Az éberség a jelzőinger nélküli és a dupla jelzőinger feltételek közti reakcióidő különbséget mutatja, minél nagyobb az érték, annál rosszabb a teljesítmény.
+# - Az orientáció a központi jelzőinger és a téri jelzőinger feltételek közti eltérést mutatja, értékének növekedése szintén a teljesítmény romlását jelzi.
+# - A végrehajtó kontroll értékének növekedése azt jelzi, hogy mennyire zavarják össze a résztvevőt az inkongruens ingerek (az inkongruens és kongruens próbák összehasonlítása alapján). Minél nagyobb az értéke, annál gyengébb a végrehajtó kontroll működése.
+# - Végül, az inkongruens helyzetben adott helyes válaszok arányának növekedése a teljesítmény javulására utal: minél nagyobb az érték, annál több helyes választ adott a személy az inkongruens feltételben (amikor az elterelő inger a célingerrel ellentétes irányba mutat).
+```
+
+
+```{r}
+# Visualize data
+trauma_long %>% 
+    group_by(measure, task, trial) %>% 
+    summarise(avg_metric = mean(value),
+              se_metric = sd(value)/sqrt(n()), 
+              .groups = "drop") %>% 
+    ggplot() +
+    aes(x = trial, y = avg_metric, 
+        ymin = avg_metric - se_metric, ymax = avg_metric + se_metric,
+        group = task, color = measure) +
+    geom_pointrange() +
+    geom_line() +
+    facet_grid(measure ~ task, scales = "free")
+```
+
+
+```{r results = "asis"}
+trauma_rmssd <-
+    lmer(rmssd ~ task * scale(trauma_sum) + sex + age + (1|id) + (1|trial), 
+     data = trauma_tidy)
+
+# summary(trauma_rmssd)
+
+model_parameters(trauma_rmssd)
+random_parameters(trauma_rmssd)
+
+```
+
+- The main effect of tasks shows that RMSSD is lower for the PUZZLE task than for the AAP task.
+- The interaction between task and trauma shows that 
+
+```{r}
+trauma_tidy %>% 
+    drop_na(trauma_sum) %>% 
+    group_by(id, task, trauma_sum, age, sex) %>% 
+    summarise(avg_rmssd = mean(rmssd),
+              avg_hr = mean(meanhr), 
+              .groups = "drop") %>% 
+    ggplot() +
+    aes(x = (trauma_sum), y = avg_rmssd, color = task) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~task) +
+    labs(x = "Sum Trauma", y = "RMSSD",
+         title = "Interaction of task and trauma score",
+         subtitle = "The plot shows that those with higher trauma score had a lower RMSSD in the PUZZLE task than in the AAP task")
+```
+
+
+
+
+
+
+
+
