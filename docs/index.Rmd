@@ -8,7 +8,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 
 library(tidyverse)
 library(haven)
@@ -17,6 +17,8 @@ library(lmerTest)
 library(performance)
 library(easystats)
 library(here)
+library(sjPlot)
+
 theme_set(theme_light())
 ```
 
@@ -68,6 +70,10 @@ trauma_tidy <-
 ```
 
 
+# The effect of tasks
+
+Both task had a significant effect on RMSSD and HR (see stats below).
+
 ```{r}
 # Visualize data
 trauma_long %>% 
@@ -84,21 +90,64 @@ trauma_long %>%
     facet_grid(measure ~ task, scales = "free")
 ```
 
+# RMSSD 
+
+Compared to the baseline, both tasks were associated with significant decrease in RMSSD
 
 ```{r results = "asis"}
+trauma_rmssd_aap <-
+  filter(trauma_tidy, task == "AAP") %>% 
+  lmer(rmssd ~ trial + sex + age + (1|id), 
+     data = .)
+
+trauma_rmssd_puzzle <-
+  filter(trauma_tidy, task == "PUZZLE") %>% 
+  lmer(rmssd ~ trial + sex + age + (1|id), 
+   data = .)
+
+
+tab_model(trauma_rmssd_aap, trauma_rmssd_puzzle, 
+          dv.labels = c("AAP", "PUZZLE")
+          )
+    
+```
+
+# HR 
+
+Compared to the baseline, both tasks were associated with significant increase in HR.
+
+```{r}
+trauma_hr_aap <-
+  filter(trauma_tidy, task == "AAP") %>% 
+  lmer(meanhr ~ trial + sex + age + (1|id), 
+     data = .)
+
+trauma_hr_puzzle <-
+filter(trauma_tidy, task == "PUZZLE") %>% 
+lmer(meanhr ~ trial + sex + age + (1|id), 
+ data = .)
+
+tab_model(trauma_hr_aap, trauma_hr_puzzle, 
+          dv.labels = c("AAP", "PUZZLE"))
+
+```
+
+
+
+# The effect of task and trauma
+## RMSSD
+
+```{r }
 trauma_rmssd <-
     lmer(rmssd ~ task * scale(trauma_sum) + sex + age + (1|id) + (1|trial), 
      data = trauma_tidy)
 
-# summary(trauma_rmssd)
-
-model_parameters(trauma_rmssd)
-random_parameters(trauma_rmssd)
+tab_model(trauma_rmssd)
 
 ```
 
 - The main effect of tasks shows that RMSSD is lower for the PUZZLE task than for the AAP task.
-- The interaction between task and trauma shows that 
+- The interaction between task and trauma shows that those with higher trauma showed a lower RMSSD in the PUZZLE task than in the AAP task.
 
 ```{r}
 trauma_tidy %>% 
@@ -117,7 +166,35 @@ trauma_tidy %>%
          subtitle = "The plot shows that those with higher trauma score had a lower RMSSD in the PUZZLE task than in the AAP task")
 ```
 
+## HR
 
+```{r }
+trauma_hr <-
+    lmer(meanhr ~ task * scale(trauma_sum) + sex + age + (1|id) + (1|trial), 
+     data = trauma_tidy)
+
+tab_model(trauma_hr)
+
+```
+
+- There are no signicant effects in heart rate by task and trauma score.
+
+```{r}
+trauma_tidy %>% 
+    drop_na(trauma_sum) %>% 
+    group_by(id, task, trauma_sum, age, sex) %>% 
+    summarise(avg_rmssd = mean(rmssd),
+              avg_hr = mean(meanhr), 
+              .groups = "drop") %>% 
+    ggplot() +
+    aes(x = (trauma_sum), y = avg_hr, color = task) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~task) +
+    labs(x = "Sum Trauma", y = "RMSSD",
+         title = "Interaction of task and trauma score",
+         subtitle = "The plot shows that those with higher trauma score had a lower RMSSD in the PUZZLE task than in the AAP task")
+```
 
 
 
