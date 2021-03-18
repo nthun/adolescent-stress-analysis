@@ -24,23 +24,28 @@ theme_set(theme_light())
 
 ```{r}
 trauma_spss <- read_spss(here("data/final_data_table.sav"))
+hrv_wide <- read_csv(here("data/4_summarised/hrv_wide.csv"))
 
 # trauma_spss %>% glimpse()
 
 # Create datasets to analyze and vizualize
 trauma <- 
     trauma_spss %>% 
-    mutate(id = row_number(),
+    filter(str_trim(KOD) != "") %>% 
+    select(-(rmssd_AAP_1:meanhr_PUZZLE_5)) %>% 
+    mutate(id = str_trim(KOD) %>% 
+                str_pad(width = 3, pad = "0", side = "left") %>% 
+                paste0(., "S"),
            sex = if_else(sex_0_1 == 0, "female", "male")) %>% 
     select(id, 
            sex, 
            age = eletkor, 
-           trauma_sum = TotTrauma_all_GY,
-           starts_with(c("rmssd_", "meanhr_")))
+           trauma_sum = TotTrauma_all_GY) %>% 
+  left_join(hrv_wide, by = c("id"))
     
 trauma_long <-
     trauma %>% 
-    pivot_longer(cols = rmssd_AAP_1:meanhr_PUZZLE_5, 
+    pivot_longer(cols = rmssd_AAP_1:meanhr_AAP_4, 
                  values_drop_na = TRUE) %>% 
     separate(name, c("measure", "task", "trial"), sep = "_", convert = TRUE) %>% 
     arrange(id, measure, task, trial) %>% 
