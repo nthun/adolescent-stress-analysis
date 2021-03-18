@@ -19,11 +19,15 @@ hrv %>%
 
 # RMSSD -----------------------------------------------------------------------------
 
-
-hrv %>% 
-    select(id, session, marker, rmssd) %>% 
+hrv_wide <-
+    hrv %>% 
+    select(id, session, marker, rmssd, meanhr) %>% 
     unite(c("session", "marker"), col = "measurement") %>% 
-    spread(measurement, rmssd) %>% view()
+    pivot_wider(names_from = "measurement",
+                values_from = c("rmssd", "meanhr"),
+                names_sep = "_") 
+
+write_excel_csv(hrv_wide, "data/4_summarised/hrv_wide.csv")
 
 hrv %>% 
     mutate(marker_name = factor(marker_name, levels = markers$marker_name)) %>% 
@@ -38,14 +42,6 @@ hrv %>%
     geom_errorbar(alpha = .5, width = .2) +
     facet_wrap(~session, scales = "free_x")
 
-
-# HR --------------------------------------------------------------------------------
-
-hrv %>% 
-    select(id, session, marker, meanhr) %>% 
-    unite(c("session", "marker"), col = "measurement") %>% 
-    spread(measurement, meanhr)
-
 hrv %>% 
     mutate(marker_name = fct_inorder(marker_name)) %>% 
     group_by(session, marker_name) %>% 
@@ -58,3 +54,15 @@ hrv %>%
     geom_line(size = 1.2) +
     geom_errorbar(alpha = .5, width = .2) +
     facet_wrap(~session, scales = "free_x")
+
+library(lmerTest)
+
+hrv %>% 
+    extract(id, into = c("id", "role"), regex = "^(\\d+)([A-Z])$") %>%
+    filter(role == "S") %>% 
+    lmer(scale(rmssd) ~ marker_name * session + (1|id), data = .) %>% summary()
+    broom.mixed::tidy()
+    
+
+
+        
