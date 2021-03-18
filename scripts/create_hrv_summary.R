@@ -31,7 +31,7 @@ hrv_summary <-
           convert = TRUE) %>%
   # Clean the hrv variable names
   mutate(variable = make_clean_names(string = variable) %>%
-           str_remove("_\\d+$")) %>%
+                    str_remove("_\\d+$")) %>%
   # Add marker names
   left_join(markers_notime, by = c("id", "session", "marker")) %>%
   pivot_wider(names_from = variable,

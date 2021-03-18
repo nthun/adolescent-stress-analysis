@@ -29,5 +29,5 @@ corrected %>%
  
 walk2(corrected$data, 
       str_glue("{output_path}/{corrected$file}.txt"),
-      ~write_csv(.x, path = .y, col_names = FALSE))    
+      ~write_csv(.x, file = .y, col_names = FALSE))    
 

@@ -9,7 +9,7 @@ raw_ibi <-
           delim = ",",
           id = "filename",
           col_names = "ibi")
-    
+
 ibi <-
     raw_ibi %>% 
     extract(filename, 
