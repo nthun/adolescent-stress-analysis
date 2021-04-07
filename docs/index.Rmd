@@ -8,7 +8,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 
 library(tidyverse)
 library(haven)
@@ -26,7 +26,7 @@ theme_set(theme_light())
 trauma_spss <- read_spss(here("data/final_data_table.sav"))
 hrv_wide <- read_csv(here("data/4_summarised/hrv_wide.csv"))
 
-# trauma_spss %>% glimpse()
+# trauma_spss %>% names()
 
 # Create datasets to analyze and vizualize
 trauma <- 
@@ -40,8 +40,11 @@ trauma <-
     select(id, 
            sex, 
            age = eletkor, 
-           trauma_sum = TotTrauma_all_GY) %>% 
-  left_join(hrv_wide, by = c("id"))
+           trauma_sum = TotTrauma_all_GY,
+           minRT:Incong_acc,
+           FAC1_6:FAC3_6) %>% 
+  left_join(hrv_wide, by = c("id")) %>% 
+  sjlabelled::zap_labels()
     
 trauma_long <-
     trauma %>% 
@@ -54,6 +57,11 @@ trauma_long <-
 trauma_tidy <- 
     trauma_long %>% 
     pivot_wider(names_from = "measure", values_from = "value")
+
+trauma_bl <-
+  trauma_tidy %>% 
+  filter(trial == 1, task == "AAP")
+
 ```
 
 
@@ -95,7 +103,7 @@ trauma_long %>%
     facet_grid(measure ~ task, scales = "free")
 ```
 
-# RMSSD 
+## RMSSD 
 
 Compared to the baseline, both tasks were associated with significant decrease in RMSSD
 
@@ -117,7 +125,7 @@ tab_model(trauma_rmssd_aap, trauma_rmssd_puzzle,
     
 ```
 
-# HR 
+## HR 
 
 Compared to the baseline, both tasks were associated with significant increase in HR.
 
@@ -200,6 +208,67 @@ trauma_tidy %>%
          title = "Interaction of task and trauma score",
          subtitle = "The plot shows that those with higher trauma score had a lower RMSSD in the PUZZLE task than in the AAP task")
 ```
+
+# Exploratory analysis
+
+## Correlation between AAP baseline HR and RMSSD with trauma, and attention variables. {.tabset}
+
+### Pairs plot for correlation
+
+```{r warning=FALSE, message=FALSE}
+trauma_bl %>% 
+  select(trauma_sum:Incong_acc, rmssd, meanhr) %>% 
+  GGally::ggpairs()
+
+```
+
+### Statistical tests for the correlation
+
+We corrected the p-values using FDR correction.
+
+```{r}
+trauma_bl %>% 
+  select(trauma_sum:Incong_acc, rmssd, meanhr) %>% 
+  correlation::correlation(p_adjust = "fdr", robust = TRUE) %>% 
+  knitr::kable()
+```  
+
+# Trauma and attention
+## HR/RMSSD moderates the association between trauma and attention
+
+There is not observable moderating effect.
+
+```{r}
+# a HR moderálta a trauma és a figyelmi működés kapcsolatát. Illetve Tinajero et al (2020) azt  találták, hogy a stresszreguláció mediálta a trauma és a figylemi teljesítmény közti összefüggést.
+
+# Amit én már megtaláltam, az az h a trauma moderálja (1. trauma faktor a változó) a stresszreguláció (AAP baseline RMSSD és Puzzle baseline RMSSD-vel is kijött) és a figylemi teljesítmény (orienting) közti kapcsolatot.
+
+ori_hr <-
+  trauma_bl %>% 
+  lm(scale(Ori) ~ scale(meanhr) * scale(FAC1_6), data = .) 
+
+ori_rmssd <-
+  trauma_bl %>% 
+  lm(scale(Ori) ~ scale(rmssd) * scale(FAC1_6), data = .) 
+  
+tab_model(ori_hr, ori_rmssd, 
+          dv.labels = c("Orienting (HR)", "Orienting (RMSSD)"),
+          robust = TRUE)
+
+check_model(ori_hr)
+
+```
+
+```{r}
+
+trauma_bl %>% 
+  ggplot() +
+  aes(y = Ori, x = rmssd, color = FAC1_6) +
+  geom_point(size = 2)
+
+```
+
+
 
 
 
