@@ -155,7 +155,7 @@ trauma_rmssd <-
     lmer(rmssd ~ task * scale(trauma_sum) + sex + age + (1|id) + (1|trial), 
      data = trauma_tidy)
 
-tab_model(trauma_rmssd)
+tab_model(trauma_rmssd, show.stat = TRUE)
 
 ```
 
@@ -186,7 +186,7 @@ trauma_hr <-
     lmer(meanhr ~ task * scale(trauma_sum) + sex + age + (1|id) + (1|trial), 
      data = trauma_tidy)
 
-tab_model(trauma_hr)
+tab_model(trauma_hr, show.stat = TRUE)
 
 ```
 
@@ -253,6 +253,7 @@ ori_rmssd <-
   
 tab_model(ori_hr, ori_rmssd, 
           dv.labels = c("Orienting (HR)", "Orienting (RMSSD)"),
+          show.stat = TRUE,
           robust = TRUE)
 
 check_model(ori_hr)
